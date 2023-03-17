@@ -9,11 +9,10 @@ use Yii;
  *
  * @property int $id
  * @property string $nombre
- * @property int|null $telefono
- * @property int $celular
+ * @property int|null $celular
  * @property string|null $direccion
- * @property string|null $descripcion
- * @property string $fecha_creacion
+ * @property string|null $descripcion_domicilio
+ * @property string $fecha_crecion
  *
  * @property Venta[] $ventas
  */
@@ -33,13 +32,12 @@ class Cliente extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['nombre', 'celular', 'fecha_creacion'], 'required'],
-            [['telefono', 'celular'], 'default', 'value' => null],
-            [['telefono', 'celular'], 'integer'],
-            /* [['fecha_creacion'], 'safe'], */
-            [['nombre'], 'string', 'max' => 50],
-            [['direccion'], 'string', 'max' => 80],
-            [['descripcion'], 'string', 'max' => 100],
+            [['nombre', 'fecha_crecion'], 'required'],
+            [['celular'], 'default', 'value' => null],
+            [['celular'], 'integer'],
+            [['fecha_crecion'], 'safe'],
+            [['nombre', 'direccion'], 'string', 'max' => 80],
+            [['descripcion_domicilio'], 'string', 'max' => 100],
         ];
     }
 
@@ -51,11 +49,10 @@ class Cliente extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'nombre' => 'Nombre',
-            'telefono' => 'Telefono',
             'celular' => 'Celular',
             'direccion' => 'Direccion',
-            'descripcion' => 'Descripcion',
-            'fecha_creacion' => 'Fecha Creacion',
+            'descripcion_domicilio' => 'Descripcion Domicilio',
+            'fecha_crecion' => 'Fecha Crecion',
         ];
     }
 
