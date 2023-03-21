@@ -61,7 +61,7 @@ class ClienteController extends \yii\web\Controller
         'message' => 'lista de clientes',
         'pageInfo' => [
             'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
-            'previus' => $currentPage < 1 ? null: $currentPage - 1,
+            'previus' => $currentPage == 1 ? null: $currentPage - 1,
             'count' => count($customers),
             'page' => $currentPage,
             'start' => $pagination->getOffset(),
