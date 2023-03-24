@@ -19,9 +19,9 @@ class CategoriaController extends \yii\web\Controller
             "actions" => [
                 'index' => ['get'],
                 'create' => ['post'],
-                'update' => ['put'],
+                'update' => ['put', 'post'],
                 'delete' => ['delete'],
-                'get-customer' => ['get'],
+                'get-category' => ['get'],
 
             ]
         ];
@@ -50,7 +50,7 @@ class CategoriaController extends \yii\web\Controller
             'totalCount' => $query->count(),
         ]);
 
-        $customers = $query
+        $categories = $query
             ->orderBy('id DESC')
             ->offset($pagination->offset)
             ->limit($pagination->limit)
@@ -64,11 +64,11 @@ class CategoriaController extends \yii\web\Controller
             'pageInfo' => [
                 'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
                 'previus' => $currentPage == 1 ? null : $currentPage - 1,
-                'count' => count($customers),
+                'count' => count($categories),
                 'page' => $currentPage,
                 'start' => $pagination->getOffset(),
                 'totalPages' => $totalPages,
-                'customers' => $customers
+                'categories' => $categories
             ]
         ];
         return $response;
@@ -140,24 +140,24 @@ class CategoriaController extends \yii\web\Controller
 
     public function actionUpdate($idCategory)
     {
-        $customer = Categoria::findOne($idCategory);
-        if ($customer) {
+        $category = Categoria::findOne($idCategory);
+        if ($category) {
             $params = Yii::$app->getRequest()->getBodyParams();
-            $customer->load($params, '');
+            $category->load($params, '');
             try {
 
-                if ($customer->save()) {
+                if ($category->save()) {
                     $response = [
                         'success' => true,
                         'message' => 'Categoria actualizado correctamente',
-                        'customer' => $customer
+                        'category' => $category
                     ];
                 } else {
                     Yii::$app->getResponse()->setStatusCode(422, 'Data Validation Failed');
                     $response = [
                         'success' => false,
                         'message' => 'Existe errores en los campos',
-                        'error' => $customer->errors
+                        'error' => $category->errors
                     ];
                 }
             } catch (Exception $e) {
@@ -177,19 +177,19 @@ class CategoriaController extends \yii\web\Controller
 
     public function actionGetCategory($idCategory)
     {
-        $customer = Categoria::findOne($idCategory);
-        if ($customer) {
+        $category = Categoria::findOne($idCategory);
+        if ($category) {
             $response = [
                 'success' => true,
                 'message' => 'Accion realizada correctamente',
-                'customer' => $customer
+                'category' => $category
             ];
         } else {
             Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 'success' => false,
                 'message' => 'No existe el Categoria',
-                'customer' => $customer
+                'category' => $category
             ];
         }
         return $response;
@@ -228,6 +228,15 @@ class CategoriaController extends \yii\web\Controller
                 "message" => "Categoria no encontrado"
             ];
         }
+        return $response;
+    }
+    public function actionCategories(){
+        $categories = Categoria::find()->all();
+        $response = [
+            'success' => true,
+            'message' => 'Lista de categorias',
+            'categories' => $categories
+        ];
         return $response;
     }
 }

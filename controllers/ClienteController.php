@@ -16,11 +16,11 @@ class ClienteController extends \yii\web\Controller
             "actions" => [
                 'index' => [ 'get'],
                 'create' => [ 'post' ],
-                'update' => [ 'put' ],
+                'update' => [ 'put', 'post' ],
                 'delete' => [ 'delete' ],
                 'get-customer' => [ 'get' ],
-
-            ]
+                'customers' => [ 'get' ],
+            ]   
         ];
 
         return $behaviors;
@@ -68,6 +68,15 @@ class ClienteController extends \yii\web\Controller
             'totalPages' => $totalPages,
             'customers' => $customers
             ]
+        ];
+        return $response;
+    }
+    public function actionCustomers(){
+        $customers = Cliente::find()->all();
+        $response = [
+            'success' => true,
+            'message' => 'Todos los clientes',
+            'customers' => $customers
         ];
         return $response;
     }
