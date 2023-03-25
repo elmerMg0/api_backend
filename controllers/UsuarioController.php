@@ -42,6 +42,7 @@ class UsuarioController extends \yii\web\Controller
             $usuario->username = $params["username"];
             $usuario->password_hash = Yii::$app->getSecurity()->generatePasswordHash($params["password"]);
             $usuario->access_token = Yii::$app->security->generateRandomString();
+            $usuario->tipo = $params["tipo"];
 
             if($usuario->save()){
                 Yii::$app->getResponse()->getStatusCode(201);
