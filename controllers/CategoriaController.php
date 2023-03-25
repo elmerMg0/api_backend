@@ -8,6 +8,7 @@ use app\models\UploadForm;
 use Exception;
 use yii\web\UploadedFile;
 use yii\data\Pagination;
+use yii\helpers\Json;
 
 class CategoriaController extends \yii\web\Controller
 {
@@ -76,74 +77,68 @@ class CategoriaController extends \yii\web\Controller
 
     public function actionCreate()
     {
-        $params = Yii::$app->getRequest()->getBodyParams();
-        $category = new Categoria();
-        $category->load($params, '');
+   
+        $category = new Categoria;
+        $file = UploadedFile::getInstanceByName('file');
+        $data = Json::decode(Yii::$app->request->post('data'));
+
+        // $data = Json::decode(Yii::$app->request->post('data'));
         try {
+        $category->nombre = $data['nombre'];
+        $category->descripcion = $data['descripcion'];
 
+        $fileName = uniqid() . '.' . $file->getExtension();
+
+
+            $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+            $category->url_image = $fileName;
             if ($category->save()) {
-                $response = [
-                    'success' => true,
-                    'message' => 'Categoria creada exitosamente',
-                    'category' => $category
-                ];
-            } else {
-                $response = [
-                    'success' => false,
-                    'message' => 'Existen errores en los campos',
-                    'category' => $category
-                ];
-            }
-        } catch (Exception $e) {
-            $response = [
-                'success' => false,
-                'message' => 'Ocurrio un error',
-                'category' => $e->getMessage()
-            ];
-        }
-        return $response;
-    }
-
-    public function actionUploadImage($idCategory)
-    {
-        $category = Categoria::findOne($idCategory);
-        if ($category) {
-
-            try {
-                $file = UploadedFile::getInstanceByName('file');
-                $fileName = uniqid() . '.' . $file->getExtension();
-                $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
-                $category->url_image = $fileName;
-                $category->save();
                 $response = [
                     'success' => true,
                     'message' => 'Imagen guardada exitosamente',
                     'fileName' => $category
                 ];
-            } catch (Exception $e) {
-                //captura el error de cuando no exista el directorio donde se quiera almacenar la imagen 
-                Yii::$app->getResponse()->setStatusCode(500);
+            } else {
                 $response = [
                     'success' => false,
-                    'message' => 'Ocurrio un error',
-                    'error' => $e->getMessage()
+                    'message' => 'Existen errores en los campos',
+                    'errors' => $category->errors
                 ];
             }
-        } else {
+        } catch (Exception $e) {
             $response = [
                 'success' => false,
-                'message' => 'No existe categoria',
+                'message' => 'ocurrio un error',
+                'fileName' => $e->getMessage()
             ];
         }
+
         return $response;
     }
+
 
     public function actionUpdate($idCategory)
     {
         $category = Categoria::findOne($idCategory);
         if ($category) {
-            $params = Yii::$app->getRequest()->getBodyParams();
-            $category->load($params, '');
+            $url_image = $category-> url_image;
+            $data = JSON::decode(Yii::$app->request->post('data'));
+            $file = UploadedFile::getInstanceByName('file');
+
+            $pathFile = Yii::getAlias('@webroot/upload/'.$url_image);
+            
+            $category->nombre = $data['nombre'];
+            $category->descripcion = $data['descripcion'];
+            if(file_exists($pathFile) && $file){
+                unlink($pathFile);
+                $fileName = uniqid() . '.' . $file->getExtension();
+                $category->url_image = $fileName;
+                $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+            }else if($file){
+                $fileName = uniqid() . '.' . $file->getExtension();
+                $category->url_image = $fileName;
+                $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+            }
             try {
 
                 if ($category->save()) {
@@ -195,25 +190,29 @@ class CategoriaController extends \yii\web\Controller
         return $response;
     }
 
-    public function actionDelete( $idCategory ){
+    public function actionDelete($idCategory)
+    {
         $category = Categoria::findOne($idCategory);
 
-        if($category){
-            try{
+        if ($category) {
+            try {
+                $url_image = $category->url_image;
                 $category->delete();
+                $pathFile = Yii::getAlias('@webroot/upload/'.$url_image);
+                unlink($pathFile);
                 $response = [
                     "success" => true,
                     "message" => "Categoria eliminado correctamente",
                     "category" => $category
                 ];
-            }catch(yii\db\IntegrityException $ie){
+            } catch (yii\db\IntegrityException $ie) {
                 Yii::$app->getResponse()->setStatusCode(409, "");
                 $response = [
                     "success" => false,
                     "message" =>  "El Categoria esta siendo usado",
                     "code" => $ie->getCode()
                 ];
-            }catch(\Exception $e){
+            } catch (\Exception $e) {
                 Yii::$app->getResponse()->setStatusCode(422, "");
                 $response = [
                     "success" => false,
@@ -221,7 +220,7 @@ class CategoriaController extends \yii\web\Controller
                     "code" => $e->getCode()
                 ];
             }
-        }else{
+        } else {
             Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 "success" => false,
@@ -230,7 +229,8 @@ class CategoriaController extends \yii\web\Controller
         }
         return $response;
     }
-    public function actionCategories(){
+    public function actionCategories()
+    {
         $categories = Categoria::find()->all();
         $response = [
             'success' => true,
