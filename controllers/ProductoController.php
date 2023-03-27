@@ -3,14 +3,14 @@
 namespace app\controllers;
 
 use Yii;
+use app\models\Producto;
 use app\models\Categoria;
-use app\models\UploadForm;
 use Exception;
 use yii\web\UploadedFile;
-use yii\data\Pagination;
 use yii\helpers\Json;
+use yii\data\Pagination;
 
-class CategoriaController extends \yii\web\Controller
+class ProductoController extends \yii\web\Controller
 {
     public function behaviors()
     {
@@ -22,7 +22,7 @@ class CategoriaController extends \yii\web\Controller
                 'create' => ['post'],
                 'update' => ['put', 'post'],
                 'delete' => ['delete'],
-                'get-category' => ['get'],
+                'get-product' => ['get'],
 
             ]
         ];
@@ -44,14 +44,14 @@ class CategoriaController extends \yii\web\Controller
 
     public function actionIndex($pageSize = 5)
     {
-        $query = Categoria::find();
+        $query = Producto::find();
 
         $pagination = new Pagination([
             'defaultPageSize' => $pageSize,
             'totalCount' => $query->count(),
         ]);
 
-        $categories = $query
+        $products = $query
             ->orderBy('id DESC')
             ->offset($pagination->offset)
             ->limit($pagination->limit)
@@ -61,59 +61,67 @@ class CategoriaController extends \yii\web\Controller
         $totalPages = $pagination->getPageCount();
         $response = [
             'success' => true,
-            'message' => 'lista de categorias',
+            'message' => 'lista de productos',
             'pageInfo' => [
                 'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
                 'previus' => $currentPage == 1 ? null : $currentPage - 1,
-                'count' => count($categories),
+                'count' => count($products),
                 'page' => $currentPage,
                 'start' => $pagination->getOffset(),
                 'totalPages' => $totalPages,
-                'categories' => $categories
+                'products' => $products
             ]
         ];
         return $response;
     }
 
-    public function actionCreate()
+    public function actionCreate($idCategory)
     {
-   
-        $category = new Categoria;
-        $file = UploadedFile::getInstanceByName('file');
-        $data = Json::decode(Yii::$app->request->post('data'));
 
-        // $data = Json::decode(Yii::$app->request->post('data'));
-        if($file){
-            $fileName = uniqid() . '.' . $file->getExtension();
-            $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
-            $category->url_image = $fileName;
-        }
-        try {
-        $category->nombre = $data['nombre'];
-        $category->descripcion = $data['descripcion'];
+        $category = Categoria::findOne($idCategory);
+        if ($category) {
+
+            $product = new Producto();
+            $file = UploadedFile::getInstanceByName('file');
+            $data = Json::decode(Yii::$app->request->post('data'));
+
+            if ($file) {
+                $fileName = uniqid() . '.' . $file->getExtension();
+                $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+                $product->url_image = $fileName;
+            }
+            try {
+                $product->load($data, '');
 
 
-            if ($category->save()) {
-                Yii::$app->getResponse()->setStatusCode(201);
-                $response = [
-                    'success' => true,
-                    'message' => 'Categoria creada exitosamente',
-                    'fileName' => $category
-                ];
-            } else {
-                Yii::$app->getResponse()->setStatusCode(422,"Data Validation Failed.");
+                if ($product->save()) {
+                    Yii::$app->getResponse()->setStatusCode(201);
+                    $response = [
+                        'success' => true,
+                        'message' => 'Producto creado exitosamente',
+                        'fileName' => $product
+                    ];
+                } else {
+                    Yii::$app->getResponse()->setStatusCode(422, "Data Validation Failed.");
+                    $response = [
+                        'success' => false,
+                        'message' => 'Existen errores en los campos',
+                        'errors' => $product->errors
+                    ];
+                }
+            } catch (Exception $e) {
+                Yii::$app->getResponse()->setStatusCode(500);
                 $response = [
                     'success' => false,
-                    'message' => 'Existen errores en los campos',
-                    'errors' => $category->errors
+                    'message' => 'ocurrio un error',
+                    'fileName' => $e->getMessage()
                 ];
             }
-        } catch (Exception $e) {
-            Yii::$app->getResponse()->setStatusCode(500);
+        }else{
+            Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 'success' => false,
-                'message' => 'ocurrio un error',
-                'fileName' => $e->getMessage()
+                'message' => 'Categoria no encontrada',
             ];
         }
 
@@ -121,50 +129,50 @@ class CategoriaController extends \yii\web\Controller
     }
 
 
-    public function actionUpdate($idCategory)
+    public function actionUpdate($idProduct)
     {
-        $category = Categoria::findOne($idCategory);
-        if ($category) {
-            $url_image = $category-> url_image;
+        $product = Producto::findOne($idProduct);
+        if ($product) {
+            $url_image = $product->url_image;
             $data = JSON::decode(Yii::$app->request->post('data'));
             $file = UploadedFile::getInstanceByName('file');
 
-            
-            $category->nombre = $data['nombre'];
-            $category->descripcion = $data['descripcion'];
-            if($url_image && $file){
-                $pathFile = Yii::getAlias('@webroot/upload/'.$url_image);
+
+            $product->nombre = $data['nombre'];
+            $product->descripcion = $data['descripcion'];
+            if ($url_image && $file) {
+                $pathFile = Yii::getAlias('@webroot/upload/' . $url_image);
                 unlink($pathFile);
                 $fileName = uniqid() . '.' . $file->getExtension();
-                $category->url_image = $fileName;
+                $product->url_image = $fileName;
                 $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
-            }else if($file){
+            } else if ($file) {
                 $fileName = uniqid() . '.' . $file->getExtension();
-                $category->url_image = $fileName;
+                $product->url_image = $fileName;
                 $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
             }
             try {
 
-                if ($category->save()) {
+                if ($product->save()) {
 
                     $response = [
                         'success' => true,
-                        'message' => 'Categoria actualizado correctamente',
-                        'category' => $category
+                        'message' => 'Producto actualizado correctamente',
+                        'product' => $product
                     ];
                 } else {
                     Yii::$app->getResponse()->setStatusCode(422, 'Data Validation Failed');
                     $response = [
                         'success' => false,
                         'message' => 'Existe errores en los campos',
-                        'error' => $category->errors
+                        'error' => $product->errors
                     ];
                 }
             } catch (Exception $e) {
                 Yii::$app->getResponse()->setStatusCode(500);
                 $response = [
                     'success' => false,
-                    'message' => 'Categoria no encontrado',
+                    'message' => 'Producto no encontrado',
                     'error' => $e->getMessage()
                 ];
             }
@@ -172,52 +180,52 @@ class CategoriaController extends \yii\web\Controller
             Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 'success' => false,
-                'message' => 'Categoria no encontrado',
+                'message' => 'Producto no encontrado',
             ];
         }
         return $response;
     }
 
-    public function actionGetCategory($idCategory)
+    public function actionGetProduct($idProduct)
     {
-        $category = Categoria::findOne($idCategory);
-        if ($category) {
+        $product = Producto::findOne($idProduct);
+        if ($product) {
             $response = [
                 'success' => true,
                 'message' => 'Accion realizada correctamente',
-                'category' => $category
+                'product' => $product
             ];
         } else {
             Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 'success' => false,
                 'message' => 'No existe el Categoria',
-                'category' => $category
+                'product' => $product
             ];
         }
         return $response;
     }
 
-    public function actionDelete($idCategory)
+    public function actionDelete($idProduct)
     {
-        $category = Categoria::findOne($idCategory);
+        $product = Producto::findOne($idProduct);
 
-        if ($category) {
+        if ($product) {
             try {
-                $url_image = $category->url_image;
-                $category->delete();
-                $pathFile = Yii::getAlias('@webroot/upload/'.$url_image);
+                $url_image = $product->url_image;
+                $product->delete();
+                $pathFile = Yii::getAlias('@webroot/upload/' . $url_image);
                 unlink($pathFile);
                 $response = [
                     "success" => true,
-                    "message" => "Categoria eliminado correctamente",
-                    "category" => $category
+                    "message" => "Producto eliminado correctamente",
+                    "product" => $product
                 ];
             } catch (yii\db\IntegrityException $ie) {
                 Yii::$app->getResponse()->setStatusCode(409, "");
                 $response = [
                     "success" => false,
-                    "message" =>  "El Categoria esta siendo usado",
+                    "message" =>  "El Producto esta siendo usado",
                     "code" => $ie->getCode()
                 ];
             } catch (\Exception $e) {
@@ -232,39 +240,19 @@ class CategoriaController extends \yii\web\Controller
             Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 "success" => false,
-                "message" => "Categoria no encontrado"
+                "message" => "Producto no encontrado"
             ];
         }
         return $response;
     }
-    public function actionCategories()
+    public function actionProducts()
     {
-        $categories = Categoria::find()->all();
+        $products = Producto::find()->all();
         $response = [
             'success' => true,
-            'message' => 'Lista de categorias',
-            'categories' => $categories
+            'message' => 'Lista de productos',
+            'products' => $products
         ];
-        return $response;
-    }
-
-    public function actionGetProductsByCategory($idCategory){
-        $category = Categoria::findOne($idCategory);
-        if($category){
-            $products = $category->getProductos()->all();
-            $response = [
-                "success" => true,
-                "message" => "Lista de productos por categoria",
-                "category" => $category,
-                "products" => $products
-            ];
-        }else{
-            Yii::$app->getResponse()->setStatusCode(404);
-            $response = [
-                "success" => false,
-                "message" => "Categoria no encontrada",
-            ];
-        }
         return $response;
     }
 }
