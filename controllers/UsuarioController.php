@@ -147,29 +147,33 @@ class UsuarioController extends \yii\web\Controller
 
         return $response;
     }
-    public function actionIndex(){
-        $users = Usuario::find()->orderBy("id DESC");
-        $pagination  = new Pagination([
-            'defaultPageSize' => 5,
-            'totalCount' => $users->count(),
-        ]);
-        $userList = $users
-            ->offset($pagination->offset)
-            ->limit($pagination->limit)
-            ->all();
-        $curentPage = $pagination->getPage() +1;
-        $totalPages = $pagination->getPageCount();
+    public function actionIndex($pageSize = 5){
+        $query = Usuario::find();
 
+        $pagination = new Pagination([
+            'defaultPageSize' => $pageSize,
+            'totalCount' => $query->count(),
+        ]);
+
+        $users = $query
+                        ->orderBy('id DESC')
+                        ->offset($pagination->offset)
+                        ->limit($pagination->limit)        
+                        ->all();
+        
+        $currentPage = $pagination->getPage() + 1;
+        $totalPages = $pagination->getPageCount();
         $response = [
-            "success" => true,
-            "data" => $userList,
-            "pagination" => [
-                'previousPage'=> $curentPage >1 ? $curentPage - 1 : null,
-                'currentPage' => $curentPage,
-                'nextPage' => $curentPage < $totalPages ? $curentPage + 1 : null,
-                'totalPages' => $totalPages,
-                'totalCount' => $pagination->totalCount,
-                'start' => $pagination->getOffset(),
+        'success' => true,
+        'message' => 'lista de clientes',
+        'pageInfo' => [
+            'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
+            'previus' => $currentPage == 1 ? null: $currentPage - 1,
+            'count' => count($users),
+            'page' => $currentPage,
+            'start' => $pagination->getOffset(),
+            'totalPages' => $totalPages,
+            'users' => $users
             ]
         ];
         return $response;
