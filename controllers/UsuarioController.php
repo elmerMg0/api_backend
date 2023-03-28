@@ -7,6 +7,8 @@ use GuzzleHttp\Psr7\Response;
 use PhpParser\Node\Stmt\Catch_;
 use Yii;
 use Exception;
+use yii\data\Pagination;
+
 class UsuarioController extends \yii\web\Controller
 {
     public function behaviors(){
@@ -146,11 +148,29 @@ class UsuarioController extends \yii\web\Controller
         return $response;
     }
     public function actionIndex(){
-        $users = Usuario::find()->all();
+        $users = Usuario::find()->orderBy("id DESC");
+        $pagination  = new Pagination([
+            'defaultPageSize' => 5,
+            'totalCount' => $users->count(),
+        ]);
+        $userList = $users
+            ->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+        $curentPage = $pagination->getPage() +1;
+        $totalPages = $pagination->getPageCount();
+
         $response = [
             "success" => true,
-            "message" => "Acción realizada con éxito",
-            "users" => $users
+            "data" => $userList,
+            "pagination" => [
+                'previousPage'=> $curentPage >1 ? $curentPage - 1 : null,
+                'currentPage' => $curentPage,
+                'nextPage' => $curentPage < $totalPages ? $curentPage + 1 : null,
+                'totalPages' => $totalPages,
+                'totalCount' => $pagination->totalCount,
+                'start' => $pagination->getOffset(),
+            ]
         ];
         return $response;
     }

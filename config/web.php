@@ -21,6 +21,19 @@ $config = [
                 ],
                 
         ],
+        'response' => [
+            'format' => yii\web\Response::FORMAT_JSON,
+            'charset' => 'UTF-8',
+            'on beforeSend' => function ($event) {   
+                header("Access-Control-Allow-Origin: *");
+                header("Access-Control-Allow-Methods: *");
+                header("Access-Control-Allow-Headers: *");
+                header("Access-Control-Allow-Credentials: true");
+                header("Access-Control-Request-Headers: *");
+                header("Access-Control-Expose-Headers: *");
+                header("Access-Control-Max-Age: 3600");
+            },
+        ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
