@@ -16,11 +16,11 @@ class ClienteController extends \yii\web\Controller
             "actions" => [
                 'index' => [ 'get'],
                 'create' => [ 'post' ],
-                'update' => [ 'put' ],
+                'update' => [ 'put', 'post' ],
                 'delete' => [ 'delete' ],
                 'get-customer' => [ 'get' ],
-
-            ]
+                'customers' => [ 'get' ],
+            ]   
         ];
 
         return $behaviors;
@@ -61,13 +61,22 @@ class ClienteController extends \yii\web\Controller
         'message' => 'lista de clientes',
         'pageInfo' => [
             'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
-            'previus' => $currentPage < 1 ? null: $currentPage - 1,
+            'previus' => $currentPage == 1 ? null: $currentPage - 1,
             'count' => count($customers),
             'page' => $currentPage,
             'start' => $pagination->getOffset(),
             'totalPages' => $totalPages,
             'customers' => $customers
             ]
+        ];
+        return $response;
+    }
+    public function actionCustomers(){
+        $customers = Cliente::find()->all();
+        $response = [
+            'success' => true,
+            'message' => 'Todos los clientes',
+            'customers' => $customers
         ];
         return $response;
     }
