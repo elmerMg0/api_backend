@@ -5,6 +5,8 @@ namespace app\controllers;
 use Yii;
 use app\models\Producto;
 use app\models\Categoria;
+use app\models\d;
+use app\models\SubProducto;
 use Exception;
 use yii\web\UploadedFile;
 use yii\helpers\Json;
@@ -84,7 +86,7 @@ class ProductoController extends \yii\web\Controller
             $product = new Producto();
             $file = UploadedFile::getInstanceByName('file');
             $data = Json::decode(Yii::$app->request->post('data'));
-
+            $varieties = Json::decode(Yii::$app->request->post('varieties'));
             if ($file) {
                 $fileName = uniqid() . '.' . $file->getExtension();
                 $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
@@ -96,6 +98,23 @@ class ProductoController extends \yii\web\Controller
 
                 if ($product->save()) {
                     Yii::$app->getResponse()->setStatusCode(201);
+                    if($varieties){
+                        for($i = 0; $i < count($varieties); $i ++ ){
+                            $variety = $varieties[$i];
+                            $newVariety = new SubProducto();
+                            $newVariety -> nombre = $variety[1];
+                            $newVariety -> producto_id = $product->id;
+                            if($newVariety -> save()){
+
+                            }else{
+                                return [
+                                    'success' => false,
+                                    'message' => 'Existen errores en los campos',
+                                    'fileName' => $newVariety -> errors
+                                ];
+                            }
+                        }
+                    }
                     $response = [
                         'success' => true,
                         'message' => 'Producto creado exitosamente',
