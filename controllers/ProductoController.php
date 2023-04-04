@@ -155,10 +155,9 @@ class ProductoController extends \yii\web\Controller
             $url_image = $product->url_image;
             $data = JSON::decode(Yii::$app->request->post('data'));
             $file = UploadedFile::getInstanceByName('file');
+            $varieties = Json::decode(Yii::$app->request->post('varieties'));
 
-
-            $product->nombre = $data['nombre'];
-            $product->descripcion = $data['descripcion'];
+            $product->load($data, '');
             if ($url_image && $file) {
                 $pathFile = Yii::getAlias('@webroot/upload/' . $url_image);
                 unlink($pathFile);
@@ -173,7 +172,24 @@ class ProductoController extends \yii\web\Controller
             try {
 
                 if ($product->save()) {
+                    if($varieties){
+                    
+                        for($i = 0; $i < count($varieties); $i ++ ){
+                            $variety = $varieties[$i];
+                            $newVariety = SubProducto::find()->where(['producto_id' => $product->id]);
+                            $newVariety -> nombre = $variety[1];
+                            $newVariety -> producto_id = $product->id;
+                            if($newVariety -> save()){
 
+                            }else{
+                                return [
+                                    'success' => false,
+                                    'message' => 'Existen errores en los campos',
+                                    'fileName' => $newVariety -> errors
+                                ];
+                            }
+                        }
+                    };
                     $response = [
                         'success' => true,
                         'message' => 'Producto actualizado correctamente',
@@ -272,6 +288,24 @@ class ProductoController extends \yii\web\Controller
             'message' => 'Lista de productos',
             'products' => $products
         ];
+        return $response;
+    }
+
+    public function actionVarieties( $idProduct ) {
+        $varieties = SubProducto::find()->where(['producto_id' => $idProduct])->all();
+        if($varieties){
+            $response = [
+                'success' => true,
+                'message' => 'Lista de subproductos',
+                'varieties' => $varieties
+            ];
+        }else{
+            $response = [
+                'success' => false,
+                'message' => 'No existen subproductos del producto.',
+                'varieties' => $varieties
+            ];
+        }
         return $response;
     }
 }
