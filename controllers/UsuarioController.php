@@ -18,7 +18,7 @@ class UsuarioController extends \yii\web\Controller
             'actions' => [
                 'login' => [ 'POST' ],
                 'create-user'=>['POST'],
-                'edit-user'=>['PUT']
+                'edit-user'=>['POST']
 
             ]
          ];
