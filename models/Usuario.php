@@ -12,11 +12,13 @@ use Yii;
  * @property string|null $password_hash
  * @property string|null $access_token
  * @property string $nombres
+ * @property string|null $url_image
+ * @property string $tipo
  *
  * @property Periodo[] $periodos
  * @property Venta[] $ventas
  */
-class Usuario extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
+class Usuario extends \yii\db\ActiveRecord
 {
     /**
      * {@inheritdoc}
@@ -32,10 +34,11 @@ class Usuario extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
     public function rules()
     {
         return [
-            [['username', 'nombres'], 'required'],
+            [['username', 'nombres', 'tipo'], 'required'],
             [['password_hash', 'access_token'], 'string'],
-            [['username'], 'string', 'max' => 50],
+            [['username', 'tipo'], 'string', 'max' => 50],
             [['nombres'], 'string', 'max' => 80],
+            [['url_image'], 'string', 'max' => 100],
         ];
     }
 
@@ -50,61 +53,11 @@ class Usuario extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             'password_hash' => 'Password Hash',
             'access_token' => 'Access Token',
             'nombres' => 'Nombres',
+            'url_image' => 'Url Image',
+            'tipo' => 'Tipo',
         ];
     }
-/**
-     * {@inheritdoc}
-     */
-    public static function findIdentity($id)
-    {
-        //return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
-    }
-    /**
-     * {@inheritdoc}
-     */
-    public static function findIdentityByAccessToken($token, $type = null)
-    {
-        $user = Usuario::findOne(['access_token' => $token]);     	
-        if ($user) {      
-        // Evita mostrar el token de usuario   	
-        $user->access_token = null; 
-        // Almacena el usuario en Yii::$app->user->identity  
-        return new static($user);     	
-        }     	
-        return null; // Almacena null en Yii::$app->user->identity
-        
-    }
-    public function getId()
-    {
-        return $this->id;
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getAuthKey()
-    {
-        return $this->authKey;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function validateAuthKey($authKey)
-    {
-        return $this->authKey === $authKey;
-    }
-
-    /**
-     * Validates password
-     *
-     * @param string $password password to validate
-     * @return bool if password provided is valid for current user
-     */
-    public function validatePassword($password)
-    {
-        return $this->password === $password;
-    }
     /**
      * Gets query for [[Periodos]].
      *
