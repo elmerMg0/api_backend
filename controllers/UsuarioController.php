@@ -7,6 +7,7 @@ use GuzzleHttp\Psr7\Response;
 use PhpParser\Node\Stmt\Catch_;
 use Yii;
 use Exception;
+use PhpParser\Node\Stmt\Break_;
 use yii\data\Pagination;
 
 class UsuarioController extends \yii\web\Controller
@@ -47,6 +48,10 @@ class UsuarioController extends \yii\web\Controller
             $usuario->tipo = $params["tipo"];
 
             if($usuario->save()){
+                $auth = Yii::$app->authManager;
+                $role = $auth->getRole($params['tipo']);
+                $auth -> assign($role, $usuario -> id);
+                
                 Yii::$app->getResponse()->getStatusCode(201);
                 $response = [
                     'success'=> true,
@@ -183,14 +188,17 @@ class UsuarioController extends \yii\web\Controller
         $params = Yii::$app->getRequest()->getBodyParams();
         $username = $params['username'];
         $user = Usuario::find()-> where(['username' => $username]) -> one();
-        
+        $auth = Yii::$app-> authManager;
         if( $user ){
             $password = $params['password'];
             if(Yii::$app->security->validatePassword($password, $user->password_hash)){
+                $role = $auth->getRolesByUser($user -> id);
                 $response = [
                     'success' => true,
                     'message' => 'Inicio de sesion correcto',
-                    'accessToken' => $user -> access_token
+                    'accessToken' => $user -> access_token,
+                    'role' => $role,
+                    'id' => $user -> id
                 ];
             }else{
                 $response = [
