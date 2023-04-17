@@ -179,4 +179,31 @@ class UsuarioController extends \yii\web\Controller
         return $response;
     }
 
+    public function actionLogin(){
+        $params = Yii::$app->getRequest()->getBodyParams();
+        $username = $params['username'];
+        $user = Usuario::find()-> where(['username' => $username]) -> one();
+        
+        if( $user ){
+            $password = $params['password'];
+            if(Yii::$app->security->validatePassword($password, $user->password_hash)){
+                $response = [
+                    'success' => true,
+                    'message' => 'Inicio de sesion correcto',
+                    'accessToken' => $user -> access_token
+                ];
+            }else{
+                $response = [
+                    'success' => false,
+                    'message' => 'Usuario o contrasenia incorrectos!',
+                ];
+            }
+        }else{
+            $response = [
+                'success' => false,
+                'message' => 'Username o contrase;a incorrectos!'
+            ];
+        }
+        return $response;
+    }
 }

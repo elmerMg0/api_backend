@@ -20,7 +20,10 @@ class VentaController extends \yii\web\Controller
 
             ]
         ];
-
+        $behaviors['authenticator'] = [         	
+            'class' => \yii\filters\auth\HttpBearerAuth::class,         	
+            'except' => ['options']     	
+        ];
         return $behaviors;
     }
 

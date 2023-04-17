@@ -2,13 +2,19 @@
 
 namespace app\models;
 
-class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
+class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 {
     public $id;
     public $username;
     public $password;
     public $authKey;
     public $accessToken;
+
+    public static function tableName()	
+    {    	
+    return 'usuario';	
+    }
+
 
     private static $users = [
         '100' => [
@@ -41,13 +47,15 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
-        foreach (self::$users as $user) {
-            if ($user['accessToken'] === $token) {
-                return new static($user);
-            }
-        }
+        $user = User::findOne(['access_token' => $token]);     	
+        if ($user) {      
+        // Evita mostrar el token de usuario   	
+        $user->access_token = null; 
+        // Almacena el usuario en Yii::$app->user->identity  
+        return new static($user);     	
+        }     	
+        return null; // Almacena null en Yii::$app->user->identity
 
-        return null;
     }
 
     /**
