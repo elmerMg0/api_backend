@@ -34,7 +34,7 @@ class Periodo extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['fecha_inicio', 'estado', 'total_cierre_caja', 'usuario_id'], 'required'],
+            [['fecha_inicio', 'estado', 'usuario_id'], 'required'],
             [['fecha_inicio', 'fecha_fin'], 'safe'],
             [['caja_inicial', 'total_ventas', 'total_cierre_caja', 'usuario_id'], 'default', 'value' => null],
             [['caja_inicial', 'total_ventas', 'total_cierre_caja', 'usuario_id'], 'integer'],

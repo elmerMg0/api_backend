@@ -41,9 +41,9 @@ class PeriodoController extends \yii\web\Controller
     {
         $params = Yii::$app->getRequest()->getBodyParams();
         //validar que no exista un periodo 
-        $lastRecord = Periodo::find()->orderBy(['id' => SORT_DESC])->one();
-        if ($lastRecord) {
-            if (!$lastRecord->estado) {
+        //$lastRecord = Periodo::find()->orderBy(['id' => SORT_DESC])->one();
+        //if ($lastRecord) {
+          //  if (!$lastRecord->estado) {
                 $period = new Periodo();
                 $period->fecha_inicio = Date('H-m-d H:i:s');
                 $period->estado = true;
@@ -62,19 +62,19 @@ class PeriodoController extends \yii\web\Controller
                         'errors' => $period->errors
                     ];
                 }
-            } else {
+          /*   } else {
                 $response = [
                     'success' => false,
                     'message' => 'Existe ya un periodo activo',
                     'periodActive' => $lastRecord
                 ];
-            }
-        } else {
+            } */
+      /*   } else {
             $response = [
                 'success' => false,
                 'message' => 'No existen periodos aun ',
             ];
-        }
+        } */
 
         return $response;
     }
@@ -124,12 +124,14 @@ class PeriodoController extends \yii\web\Controller
                 $response = [
                     'success' => true,
                     'message' => 'detalle de periodo por usuario',
-                    'user' => $user,
-                    'period' => $period,
-                    'totalSaleCash' => $totalSaleCash,
-                    'totalSaleCard' => $totalSaleCard,
-                    'totalSaleTransfer' => $totalSaleTransfer
-                ];
+                    'info' => [
+                        'user' => $user,
+                        'period' => $period,
+                        'totalSaleCash' => $totalSaleCash,
+                        'totalSaleCard' => $totalSaleCard,
+                        'totalSaleTransfer' => $totalSaleTransfer
+                        ]
+                    ];
             } else {
                 $response = [
                     'success' => false,
@@ -142,6 +144,32 @@ class PeriodoController extends \yii\web\Controller
                 'success' => false,
                 'message' => 'No existe periodo',
                 'period' => $idPeriod
+            ];
+        }
+        return $response;
+    }
+
+    public function actionExistsPeriod(){
+        $lastRecord = Periodo::find()->orderBy(['id' => SORT_DESC])->one();
+        if($lastRecord){
+            if( $lastRecord -> estado) {
+                $response = [
+                    'success' => true, 
+                    'message' => 'existe periodo activo',
+                    'period' => true
+                ];
+            }else{
+                $response = [
+                    'success' => false, 
+                    'message' => 'existe periodoa activo',
+                    'period' => false    
+                ];
+            }
+        }else{
+            $response = [
+                'success' => true, 
+                'message' => 'No existen periodos aun',
+                'period' => false    
             ];
         }
         return $response;
