@@ -13,7 +13,7 @@ use Yii;
  * @property int|null $caja_inicial
  * @property bool $estado
  * @property int|null $total_ventas
- * @property int $total_cierre_caja
+ * @property int|null $total_cierre_caja
  * @property int $usuario_id
  *
  * @property Usuario $usuario

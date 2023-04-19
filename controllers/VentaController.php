@@ -49,7 +49,8 @@ class VentaController extends \yii\web\Controller
         $numberOrder = Venta::find() -> all();
         $orderDetail = $params['orderDetail'];    
         $sale = new Venta();
-        $sale -> fecha = date('Y-m-d h:i:s');
+        /* date_default_timezone_set('America/La_Paz');
+        $sale -> fecha = date('Y-m-d h:i:s'); */
         $sale -> cantidad_total = intval($params['cantidadTotal']);
         $sale -> cantidad_cancelada = $params['cantidadPagada'];
         $sale -> usuario_id = $userId;

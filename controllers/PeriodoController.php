@@ -84,7 +84,8 @@ class PeriodoController extends \yii\web\Controller
 
         $params = Yii::$app->getRequest()->getBodyParams();
         $period = Periodo::findOne($idPeriod);
-        $period->fecha_fin = Date('H-m-d H:i:s');
+         date_default_timezone_set('America/La_Paz');
+        $period -> fecha_fin = date('Y-m-d H:i:s');
         $period->estado = false;
 
         $totalSale = Venta::find()
@@ -186,6 +187,26 @@ class PeriodoController extends \yii\web\Controller
                 'success' => true, 
                 'message' => 'No existen periodos aun',
                 'period' => false    
+            ];
+        }
+        return $response;
+    }
+
+    public function actionExistsPeriodActiveById( $idUser ){
+        $period = Periodo::find()
+                            ->where(['estado' => true, 'usuario_id' => $idUser])
+                            ->one();
+        if($period){
+            $response = [
+                'success' => true,
+                'message' => 'Periodo activo',
+                'period' => $period
+            ];
+        }else {
+            $response = [
+                'success' => true,
+                'message' => 'Periodo activo',
+                'period' => []
             ];
         }
         return $response;
