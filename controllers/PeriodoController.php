@@ -19,7 +19,7 @@ class PeriodoController extends \yii\web\Controller
                 'create' => ['POST'],
                 'update' => ['POST'],
                 'start-period' => ['POST'],
-                'close-period' => ['Get']
+                'close-period' => ['POST']
 
             ]
         ];
@@ -45,7 +45,7 @@ class PeriodoController extends \yii\web\Controller
         //if ($lastRecord) {
           //  if (!$lastRecord->estado) {
                 $period = new Periodo();
-                $period->fecha_inicio = Date('H-m-d H:i:s');
+                /* $period->fecha_inicio = Date('H-m-d H:i:s'); */
                 $period->estado = true;
                 $period->caja_inicial = $params['cajaInicial'];
                 $period->usuario_id = $userId;
@@ -78,18 +78,26 @@ class PeriodoController extends \yii\web\Controller
 
         return $response;
     }
-    public function actionClosePeriod( $idPeriod )
+    public function actionClosePeriod( $idPeriod, $idUser)
     {
+        $user = Usuario::findOne($idUser);
+
         $params = Yii::$app->getRequest()->getBodyParams();
         $period = Periodo::findOne($idPeriod);
         $period->fecha_fin = Date('H-m-d H:i:s');
         $period->estado = false;
-        $period->total_ventas = 'calcular total ventas por periodo';
+
+        $totalSale = Venta::find()
+        ->where(['>=', 'fecha', $period->fecha_inicio])
+        ->andWhere(['usuario_id' => $user->id])
+        ->sum('cantidad_total');
+
+        $period->total_ventas = $totalSale;
         $period->total_cierre_caja = $params['totalCierreCaja'];
         if ($period->save()) {
             $response = [
                 'success' => true,
-                'message' => 'Periodo iniciado con exito!',
+                'message' => 'Periodo cerrado con exito!',
                 'period' => $period
             ];
         } else {
@@ -102,25 +110,32 @@ class PeriodoController extends \yii\web\Controller
         return $response;
     }
 
-    public function getDetailPeriod($idUser, $idPeriod)
+    public function actionGetDetailPeriod($idUser, $idPeriod)
     {
         $period = Periodo::findOne($idPeriod);
         if ($period) {
-            $user = Usuario::findOne($idUser);
+             $user = Usuario::findOne($idUser);
             if ($user) {
                 //vetnas totales hasta el momento 
                 $totalSaleCash = Venta::find()
-                    ->where(['fecha' >= $period->fecha_inicio, 'usuario_id' => $user->id, 'tipo_pag' => 'efectivo'])
+                    ->where(['>=', 'fecha', $period->fecha_inicio])
+                    ->andWhere([ 'usuario_id' => 1, 'tipo_pago' => 'efectivo'])
                     ->sum('cantidad_total');
 
                 $totalSaleCard = Venta::find()
-                    ->where(['fecha' >= $period->fecha_inicio, 'usuario_id' => $user->id, 'tipo_pag' => 'tarjeta'])
+                    ->where(['>=', 'fecha', $period->fecha_inicio])
+                    ->andWhere(['usuario_id' => $user->id, 'tipo_pago' => 'tarjeta'])
                     ->sum('cantidad_total');
 
                 $totalSaleTransfer = Venta::find()
-                    ->where(['fecha' >= $period->fecha_inicio, 'usuario_id' => $user->id, 'tipo_pag' => 'transferencia'])
+                    ->where(['>=', 'fecha', $period->fecha_inicio])
+                    ->andWhere(['usuario_id' => $user->id, 'tipo_pago' => 'transferencia'])
                     ->sum('cantidad_total');
 
+                $totalSale = Venta::find()
+                    ->where(['>=', 'fecha', $period->fecha_inicio])
+                    ->andWhere(['usuario_id' => $user->id])
+                    ->sum('cantidad_total');
                 $response = [
                     'success' => true,
                     'message' => 'detalle de periodo por usuario',
@@ -129,8 +144,9 @@ class PeriodoController extends \yii\web\Controller
                         'period' => $period,
                         'totalSaleCash' => $totalSaleCash,
                         'totalSaleCard' => $totalSaleCard,
-                        'totalSaleTransfer' => $totalSaleTransfer
-                        ]
+                        'totalSaleTransfer' => $totalSaleTransfer,
+                        'totalSale' => $totalSale
+                        ]   
                     ];
             } else {
                 $response = [
@@ -173,5 +189,16 @@ class PeriodoController extends \yii\web\Controller
             ];
         }
         return $response;
+    }
+    public function actionTest () {
+        $period = Periodo::findOne(2);
+       /*  $ventas = Venta::find()
+                 ->where(['id' => 1000])            
+                    ->all(); */
+                    $totalSaleCash = Venta::find()
+                    /* ->where(['>=', 'fecha', $period->fecha_inicio]) */
+                    ->andWhere([ 'usuario_id' => 1, 'tipo_pago' => 'efectivo'])
+                    ->all();
+        return $totalSaleCash;
     }
 }
