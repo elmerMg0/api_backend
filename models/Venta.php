@@ -15,6 +15,7 @@ use Yii;
  * @property int $numero_pedido
  * @property int $cliente_id
  * @property string $estado
+ * @property string|null $tipo_pago
  *
  * @property Cliente $cliente
  * @property DetalleVenta[] $detalleVentas
@@ -36,11 +37,11 @@ class Venta extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['fecha', 'usuario_id', 'numero_pedido', 'cliente_id', 'estado'], 'required'],
             [['fecha'], 'safe'],
             [['cantidad_total', 'cantidad_cancelada', 'usuario_id', 'numero_pedido', 'cliente_id'], 'default', 'value' => null],
             [['cantidad_total', 'cantidad_cancelada', 'usuario_id', 'numero_pedido', 'cliente_id'], 'integer'],
-            [['estado'], 'string', 'max' => 20],
+            [['usuario_id', 'numero_pedido', 'cliente_id', 'estado'], 'required'],
+            [['estado', 'tipo_pago'], 'string', 'max' => 20],
             [['cliente_id'], 'exist', 'skipOnError' => true, 'targetClass' => Cliente::class, 'targetAttribute' => ['cliente_id' => 'id']],
             [['usuario_id'], 'exist', 'skipOnError' => true, 'targetClass' => Usuario::class, 'targetAttribute' => ['usuario_id' => 'id']],
         ];
@@ -60,6 +61,7 @@ class Venta extends \yii\db\ActiveRecord
             'numero_pedido' => 'Numero Pedido',
             'cliente_id' => 'Cliente ID',
             'estado' => 'Estado',
+            'tipo_pago' => 'Tipo Pago',
         ];
     }
 

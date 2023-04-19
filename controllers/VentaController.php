@@ -3,6 +3,7 @@
 namespace app\controllers;
 use app\models\DetalleVenta;
 use app\models\Venta;
+use app\models\Periodo;
 use Yii;
 class VentaController extends \yii\web\Controller
 {
@@ -20,7 +21,10 @@ class VentaController extends \yii\web\Controller
 
             ]
         ];
-
+        $behaviors['authenticator'] = [         	
+            'class' => \yii\filters\auth\HttpBearerAuth::class,         	
+            'except' => ['options']     	
+        ];
         return $behaviors;
     }
 
@@ -45,12 +49,14 @@ class VentaController extends \yii\web\Controller
         $numberOrder = Venta::find() -> all();
         $orderDetail = $params['orderDetail'];    
         $sale = new Venta();
-        $sale -> fecha = date('Y-m-d h:i:s');
+        /* date_default_timezone_set('America/La_Paz');
+        $sale -> fecha = date('Y-m-d h:i:s'); */
         $sale -> cantidad_total = intval($params['cantidadTotal']);
         $sale -> cantidad_cancelada = $params['cantidadPagada'];
         $sale -> usuario_id = $userId;
-        $sale -> estado = $params['estado'];
         $sale -> numero_pedido = count($numberOrder) + 1;
+        $sale -> estado = $params['estado'];
+        $sale -> tipo_pago = $params['tipoPago'];
         $sale -> cliente_id = $customerId;
 
         if($sale -> save()){
@@ -85,5 +91,22 @@ class VentaController extends \yii\web\Controller
             ];
         }
     return $response;
+    }
+
+    /* Retorna la lista de ventas del periodo */
+    public function actionGetSales( $idPeriod, $idUser ){
+
+        $period = Periodo::findOne( $idPeriod );
+
+        $sales = Venta::find()
+                        ->where(['fecha' >= $period-> fecha_inicio, 'usuario_id' => $idUser])
+                        -> all();
+        $response = [
+            'success' => true, 
+            'message' => 'Lista de ventas',
+            'sales' => $sales
+        ];
+        
+        return $response;
     }
 }

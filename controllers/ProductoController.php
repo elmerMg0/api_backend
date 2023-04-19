@@ -28,6 +28,12 @@ class ProductoController extends \yii\web\Controller
 
             ]
         ];
+        // add Bearer authentication filter     	
+        $behaviors['authenticator'] = [         	
+            'class' => \yii\filters\auth\HttpBearerAuth::class,         	
+            'except' => ['options']     	
+        ];
+    
 
         return $behaviors;
     }

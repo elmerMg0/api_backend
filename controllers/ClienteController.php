@@ -22,7 +22,10 @@ class ClienteController extends \yii\web\Controller
                 'customers' => [ 'get' ],
             ]   
         ];
-
+        $behaviors['authenticator'] = [         	
+            'class' => \yii\filters\auth\HttpBearerAuth::class,         	
+            'except' => ['options']     	
+        ];
         return $behaviors;
 
     }

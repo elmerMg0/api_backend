@@ -7,6 +7,7 @@ use GuzzleHttp\Psr7\Response;
 use PhpParser\Node\Stmt\Catch_;
 use Yii;
 use Exception;
+use PhpParser\Node\Stmt\Break_;
 use yii\data\Pagination;
 use yii\helpers\Json;
 use yii\web\UploadedFile;
@@ -59,6 +60,9 @@ class UsuarioController extends \yii\web\Controller
             $user->tipo = $data["tipo"];
 
             if($user->save()){
+                $auth = Yii::$app->authManager;
+                $role = $auth->getRole($data['tipo']);
+                $auth -> assign($role, $user -> id);
                 Yii::$app->getResponse()->getStatusCode(201);
                 $response = [
                     'success'=> true,
@@ -211,4 +215,34 @@ class UsuarioController extends \yii\web\Controller
         return $response;
     }
 
+    public function actionLogin(){
+        $params = Yii::$app->getRequest()->getBodyParams();
+        $username = $params['username'];
+        $user = Usuario::find()-> where(['username' => $username]) -> one();
+        $auth = Yii::$app-> authManager;
+        if( $user ){
+            $password = $params['password'];
+            if(Yii::$app->security->validatePassword($password, $user->password_hash)){
+                $role = $auth->getRolesByUser($user -> id);
+                $response = [
+                    'success' => true,
+                    'message' => 'Inicio de sesion correcto',
+                    'accessToken' => $user -> access_token,
+                    'role' => $role,
+                    'id' => $user -> id
+                ];
+            }else{
+                $response = [
+                    'success' => false,
+                    'message' => 'Usuario o contrasenia incorrectos!',
+                ];
+            }
+        }else{
+            $response = [
+                'success' => false,
+                'message' => 'Username o contrase;a incorrectos!'
+            ];
+        }
+        return $response;
+    }
 }

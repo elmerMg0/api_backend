@@ -37,10 +37,12 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
-        'user' => [
-            'identityClass' => 'app\models\User',
-            'enableAutoLogin' => true,
-        ],
+        'user' => [         	
+            'identityClass' => 'app\models\User',         	
+            'enableAutoLogin' => true,         	
+            'enableSession' => false,         	
+            'loginUrl' => null     	
+        ],            
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
@@ -66,6 +68,9 @@ $config = [
             'showScriptName' => false,
             'rules' => [
             ],
+        ],
+        'authManager' => [
+            'class' => 'yii\rbac\DbManager',
         ],
 
        
