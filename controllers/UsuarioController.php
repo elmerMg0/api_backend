@@ -8,6 +8,8 @@ use PhpParser\Node\Stmt\Catch_;
 use Yii;
 use Exception;
 use yii\data\Pagination;
+use yii\helpers\Json;
+use yii\web\UploadedFile;
 
 class UsuarioController extends \yii\web\Controller
 {
@@ -37,21 +39,31 @@ class UsuarioController extends \yii\web\Controller
 
    
     public function actionCreateUser(){
-        $params = Yii::$app->getRequest()->getBodyParams();
-        try{
-            $usuario = new Usuario();
-            $usuario->nombres = $params["nombres"];
-            $usuario->username = $params["username"];
-            $usuario->password_hash = Yii::$app->getSecurity()->generatePasswordHash($params["password"]);
-            $usuario->access_token = Yii::$app->security->generateRandomString();
-            $usuario->tipo = $params["tipo"];
+        //$params = Yii::$app->getRequest()->getBodyParams();
+        $user = new Usuario();
+        $file = UploadedFile::getInstanceByName('file');
+        $data = Json::decode(Yii::$app->request->post('data'));
 
-            if($usuario->save()){
+        // $data = Json::decode(Yii::$app->request->post('data'));
+        if($file){
+            $fileName = uniqid() . '.' . $file->getExtension();
+            $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+            $user->url_image = $fileName;
+        }
+        try{
+  
+            $user->nombres = $data["nombres"];
+            $user->username = $data["username"];
+            $user->password_hash = Yii::$app->getSecurity()->generatePasswordHash($data["password"]);
+            $user->access_token = Yii::$app->security->generateRandomString();
+            $user->tipo = $data["tipo"];
+
+            if($user->save()){
                 Yii::$app->getResponse()->getStatusCode(201);
                 $response = [
                     'success'=> true,
                     'message'=> 'registered user',
-                    'usuario'=>$usuario
+                    'usuario'=>$user
                 ];
                 
             }else{
@@ -59,7 +71,7 @@ class UsuarioController extends \yii\web\Controller
                 $response = [
                     'success' => false,
                     'message' => 'Wrong parameters',
-                    'usuario' => $usuario->errors,
+                    'usuario' => $user->errors,
                 ];
             }
         } catch(Exception $e){
@@ -108,43 +120,63 @@ class UsuarioController extends \yii\web\Controller
         return $response;
     }
     public function actionEditUser($id){
-        $params = Yii::$app->getRequest()->getBodyParams();
-        $usuario = Usuario::findOne($id);
-        if ($usuario) {
-            $usuario->load($params, '');
-            try{
-                if ($usuario->save()) {
+        $user = Usuario::findOne($id);
+        if ($user) {
+            $url_image = $user-> url_image;
+            $data = JSON::decode(Yii::$app->request->post('data'));
+            $file = UploadedFile::getInstanceByName('file');
+
+            
+            $user->nombres = $data["nombres"];
+            $user->username = $data["username"];
+            if(isset($data["password"])){
+                $user->password_hash = Yii::$app->getSecurity()->generatePasswordHash($data["password"]);
+            }            
+            $user->access_token = Yii::$app->security->generateRandomString();
+            $user->tipo = $data["tipo"];
+            if($url_image && $file){
+                $pathFile = Yii::getAlias('@webroot/upload/'.$url_image);
+                unlink($pathFile);
+                $fileName = uniqid() . '.' . $file->getExtension();
+                $user->url_image = $fileName;
+                $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+            }else if($file){
+                $fileName = uniqid() . '.' . $file->getExtension();
+                $user->url_image = $fileName;
+                $file->saveAs(Yii::getAlias('@app/web/upload/') . $fileName);
+            }
+            try {
+
+                if ($user->save()) {
+
                     $response = [
                         'success' => true,
-                        'message' => 'correct update',
-                        'data' => $usuario
+                        'message' => 'Usuario Actualizado',
+                        'user' => $user
                     ];
                 } else {
-                    Yii::$app->getResponse()->setStatusCode(422, 'Data Validation Failed.');
+                    Yii::$app->getResponse()->setStatusCode(422, 'Data Validation Failed');
                     $response = [
                         'success' => false,
-                        'message' => 'failed update',
-                        'data' => $usuario->errors
+                        'message' => 'Existe errores en los campos',
+                        'error' => $user->errors
                     ];
                 }
-            }catch(Exception $e){
+            } catch (Exception $e) {
+                Yii::$app->getResponse()->setStatusCode(500);
                 $response = [
                     'success' => false,
-                    'message' => 'Failed to update',
-                    'data' => $e->getMessage()
+                    'message' => 'Error de codigo',
+                    'error' => $e->getMessage()
                 ];
             }
-            
-            
-        }else{
-            Yii::$app->getResponse()->getStatusCode(404);
+        } else {
+            Yii::$app->getResponse()->setStatusCode(404);
             $response = [
                 'success' => false,
-                'message' => 'User not found',
-                
+                'message' => 'Usuario no encontrado',
             ];
         }
-
         return $response;
     }
     public function actionIndex($pageSize = 5){

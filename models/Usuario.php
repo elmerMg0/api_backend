@@ -12,8 +12,8 @@ use Yii;
  * @property string|null $password_hash
  * @property string|null $access_token
  * @property string $nombres
- * @property string|null $url_image
  * @property string $tipo
+ * @property string|null $url_image
  *
  * @property Periodo[] $periodos
  * @property Venta[] $ventas
@@ -35,10 +35,9 @@ class Usuario extends \yii\db\ActiveRecord
     {
         return [
             [['username', 'nombres', 'tipo'], 'required'],
-            [['password_hash', 'access_token'], 'string'],
+            [['password_hash', 'access_token', 'url_image'], 'string'],
             [['username', 'tipo'], 'string', 'max' => 50],
             [['nombres'], 'string', 'max' => 80],
-            [['url_image'], 'string', 'max' => 100],
         ];
     }
 
@@ -53,8 +52,8 @@ class Usuario extends \yii\db\ActiveRecord
             'password_hash' => 'Password Hash',
             'access_token' => 'Access Token',
             'nombres' => 'Nombres',
-            'url_image' => 'Url Image',
             'tipo' => 'Tipo',
+            'url_image' => 'Url Image',
         ];
     }
 

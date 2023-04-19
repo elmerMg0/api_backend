@@ -16,7 +16,6 @@ use Yii;
  * @property int|null $stock
  * @property int $categoria_id
  * @property string|null $url_image
- * @property bool $estado
  *
  * @property Categoria $categoria
  * @property DetalleVenta[] $detalleVentas
@@ -38,14 +37,13 @@ class Producto extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['nombre', 'tipo', 'precio_venta', 'precio_compra', 'categoria_id', 'estado'], 'required'],
+            [['nombre', 'tipo', 'precio_venta', 'precio_compra', 'categoria_id'], 'required'],
             [['precio_venta', 'precio_compra'], 'number'],
             [['stock', 'categoria_id'], 'default', 'value' => null],
             [['stock', 'categoria_id'], 'integer'],
-            [['estado'], 'boolean'],
+            [['url_image'], 'string'],
             [['nombre', 'tipo'], 'string', 'max' => 50],
             [['descripcion'], 'string', 'max' => 80],
-            [['url_image'], 'string', 'max' => 100],
             [['categoria_id'], 'exist', 'skipOnError' => true, 'targetClass' => Categoria::class, 'targetAttribute' => ['categoria_id' => 'id']],
         ];
     }
@@ -65,7 +63,6 @@ class Producto extends \yii\db\ActiveRecord
             'stock' => 'Stock',
             'categoria_id' => 'Categoria ID',
             'url_image' => 'Url Image',
-            'estado' => 'Estado',
         ];
     }
 

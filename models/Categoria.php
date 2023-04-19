@@ -31,9 +31,9 @@ class Categoria extends \yii\db\ActiveRecord
     {
         return [
             [['nombre'], 'required'],
+            [['url_image'], 'string'],
             [['nombre'], 'string', 'max' => 50],
             [['descripcion'], 'string', 'max' => 80],
-            [['url_image'], 'string', 'max' => 100],
         ];
     }
 
