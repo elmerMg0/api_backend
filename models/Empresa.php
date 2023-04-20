@@ -7,6 +7,7 @@ use Yii;
 /**
  * This is the model class for table "empresa".
  *
+ * @property int $id
  * @property string $nombre
  * @property string $email
  * @property int|null $phone
@@ -43,6 +44,7 @@ class Empresa extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
+            'id' => 'ID',
             'nombre' => 'Nombre',
             'email' => 'Email',
             'phone' => 'Phone',
