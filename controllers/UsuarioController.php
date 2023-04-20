@@ -93,7 +93,10 @@ class UsuarioController extends \yii\web\Controller
         $params= Usuario::findOne($id);
         if($params){
             try{
+                $url_image = $params->url_image;
                 $params->delete();
+                $pathFile = Yii::getAlias('@webroot/upload/'.$url_image);
+                unlink($pathFile);
                 $response = [
                     'success'=>true,
                     'message'=>'User deleted'
@@ -107,7 +110,7 @@ class UsuarioController extends \yii\web\Controller
                 ];
             }catch(Exception $e){
                 Yii::$app->getResponse()->setStatusCode(422,'Data validation failed');
-                $resultado = [
+                $response = [
                     'success' => false,
                     'message'=>$e->getMessage(),
                     'code' => $e->getCode()
@@ -115,7 +118,7 @@ class UsuarioController extends \yii\web\Controller
         }
         }else{
             Yii::$app->getResponse()->getStatusCode(404);
-            $resultado = [
+            $response = [
                 'success' => false,
                 'message' => 'user not found',
                 
@@ -214,7 +217,21 @@ class UsuarioController extends \yii\web\Controller
         ];
         return $response;
     }
-
+    public function actionGetAllUsers(){
+        $users = Usuario::find()->all();
+        if($users){
+            $response = [
+                'success'=>true,
+                'users' => $users
+            ];
+        }else{
+            $response = [
+                'success'=>false,
+                'message'=>'no hay usuarios'
+            ];
+        }
+        return $response;
+    }
     public function actionLogin(){
         $params = Yii::$app->getRequest()->getBodyParams();
         $username = $params['username'];
@@ -244,5 +261,8 @@ class UsuarioController extends \yii\web\Controller
             ];
         }
         return $response;
+    }
+    public function actionTest(){
+        return Yii::$app->getSecurity()->generatePasswordHash("cesar");
     }
 }
