@@ -148,4 +148,13 @@ class VentaController extends \yii\web\Controller
        
         return $response;
     }
+
+    public function actionGetBestSellerProduct(){
+        $sales = Venta::find()
+                    ->select(['venta.fecha', 'detalle_venta.cantidad as cantidad'])
+                    ->join('LEFT JOIN', 'detalle_venta', 'detalle_venta.venta_id = venta.id')
+                    ->all();
+
+        return $sales;
+    }
 }
