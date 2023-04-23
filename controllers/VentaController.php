@@ -5,6 +5,7 @@ use app\models\DetalleVenta;
 use app\models\Venta;
 use app\models\Periodo;
 use Yii;
+use yii\db\Query;
 class VentaController extends \yii\web\Controller
 {
     public function behaviors()
@@ -107,6 +108,44 @@ class VentaController extends \yii\web\Controller
             'sales' => $sales
         ];
         
+        return $response;
+    }
+
+    public function actionGetInfoLineChart(){
+        $params = Yii::$app->getRequest()->getBodyParams();
+        if($params['tipo'] === 'mes'){
+            $salesForDay = (new Query())
+            ->select(['DATE(DATE_TRUNC(\'month\', fecha)) AS mes', 'SUM(cantidad_total) AS total'])
+            ->from('venta')
+             ->where(['>=','fecha', $params['fechaInicio']])
+            ->AndWhere(['<=','fecha', $params['fechaFin']])
+            ->groupBy(['mes'])
+            ->all();
+        }else{
+            $salesForDay = Venta::find()
+            ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total'])
+            ->where(['>=','fecha', $params['fechaInicio']])
+            ->AndWhere(['<=','fecha', $params['fechaFin']])
+            ->orderBy(['fecha' => SORT_ASC])
+            ->groupBy(['DATE(fecha)'])
+            ->asArray()
+            ->all();
+        }
+        if($salesForDay){
+            $response = [
+                'success' => true,
+                'message' => 'Lista de ventas por dia',
+                'salesForDay' => $salesForDay
+            ];
+        }else{
+            $response = [
+                'success' => false,
+                'message' => 'No existen ventas aun',
+                'salesForDay' => $salesForDay
+            ];
+        }
+        
+       
         return $response;
     }
 }
