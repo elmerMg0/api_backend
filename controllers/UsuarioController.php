@@ -265,4 +265,40 @@ class UsuarioController extends \yii\web\Controller
     public function actionTest(){
         return Yii::$app->getSecurity()->generatePasswordHash("cesar");
     }
+
+    public function actionGetUsers( $pageSize = 5){
+        $query = Usuario::find();
+        $pagination = new Pagination([
+            'defaultPageSize'=> $pageSize,
+            'totalCount' => $query->count()
+        ]);
+        $users = $query
+                    ->offset($pagination->offset)
+                    ->limit($pagination -> limit)
+                    ->all();
+        if($users){
+            $currentPage = $pagination->getPage() + 1;
+            $totalPages = $pagination->getPageCount();
+            $response = [
+            'success' => true,
+            'message' => 'lista de clientes',
+            'pageInfo' => [
+                'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
+                'previus' => $currentPage == 1 ? null: $currentPage - 1,
+                'count' => count($users),
+                'page' => $currentPage,
+                'start' => $pagination->getOffset(),
+                'totalPages' => $totalPages,
+            ],
+            'users' => $users
+            ];
+        }else{
+            $response = [
+                'success' => false,
+                'message' => 'No existen usuarios',
+                'users' => $users
+            ];
+        }
+        return $response;
+    }
 }

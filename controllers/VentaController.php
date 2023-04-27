@@ -1,11 +1,13 @@
 <?php
 
 namespace app\controllers;
+
 use app\models\DetalleVenta;
 use app\models\Venta;
 use app\models\Periodo;
 use Yii;
 use yii\db\Query;
+
 class VentaController extends \yii\web\Controller
 {
     public function behaviors()
@@ -22,9 +24,9 @@ class VentaController extends \yii\web\Controller
 
             ]
         ];
-        $behaviors['authenticator'] = [         	
-            'class' => \yii\filters\auth\HttpBearerAuth::class,         	
-            'except' => ['options']     	
+        $behaviors['authenticator'] = [
+            'class' => \yii\filters\auth\HttpBearerAuth::class,
+            'except' => ['options']
         ];
         return $behaviors;
     }
@@ -45,29 +47,30 @@ class VentaController extends \yii\web\Controller
     {
         return $this->render('index');
     }
-    public function actionCreate( $userId, $customerId ){
-        $params = Yii::$app->getRequest()-> getBodyParams();
-        $numberOrder = Venta::find() -> all();
-        $orderDetail = $params['orderDetail'];    
+    public function actionCreate($userId, $customerId)
+    {
+        $params = Yii::$app->getRequest()->getBodyParams();
+        $numberOrder = Venta::find()->all();
+        $orderDetail = $params['orderDetail'];
         $sale = new Venta();
         /* date_default_timezone_set('America/La_Paz');
         $sale -> fecha = date('Y-m-d h:i:s'); */
-        $sale -> cantidad_total = intval($params['cantidadTotal']);
-        $sale -> cantidad_cancelada = $params['cantidadPagada'];
-        $sale -> usuario_id = $userId;
-        $sale -> numero_pedido = count($numberOrder) + 1;
-        $sale -> estado = $params['estado'];
-        $sale -> tipo_pago = $params['tipoPago'];
-        $sale -> cliente_id = $customerId;
+        $sale->cantidad_total = intval($params['cantidadTotal']);
+        $sale->cantidad_cancelada = $params['cantidadPagada'];
+        $sale->usuario_id = $userId;
+        $sale->numero_pedido = count($numberOrder) + 1;
+        $sale->estado = $params['estado'];
+        $sale->tipo_pago = $params['tipoPago'];
+        $sale->cliente_id = $customerId;
 
-        if($sale -> save()){
-             //agregar detalle de venta
-            foreach( $orderDetail as $order){
+        if ($sale->save()) {
+            //agregar detalle de venta
+            foreach ($orderDetail as $order) {
                 $saleDetail = new DetalleVenta();
-                $saleDetail -> cantidad = $order['cantidad'];
-                $saleDetail -> producto_id = $order['id'];
-                $saleDetail -> venta_id =  $sale -> id;
-                if(!$saleDetail -> save()){
+                $saleDetail->cantidad = $order['cantidad'];
+                $saleDetail->producto_id = $order['id'];
+                $saleDetail->venta_id =  $sale->id;
+                if (!$saleDetail->save()) {
                     Yii::$app->getResponse()->setStatusCode(422, 'Data Validation Failed.');
                     $response = [
                         'success' => false,
@@ -83,7 +86,7 @@ class VentaController extends \yii\web\Controller
                 'message' => 'failed update',
                 'sale' => $sale
             ];
-        }else{
+        } else {
             Yii::$app->getResponse()->setStatusCode(422, 'Data Validation Failed.');
             $response = [
                 'success' => false,
@@ -91,47 +94,91 @@ class VentaController extends \yii\web\Controller
                 'data' => $sale->errors
             ];
         }
-    return $response;
-    }
-
-    /* Retorna la lista de ventas del periodo */
-    public function actionGetSales( $idPeriod, $idUser ){
-
-        $period = Periodo::findOne( $idPeriod );
-
-        $sales = Venta::find()
-                        ->where(['fecha' >= $period-> fecha_inicio, 'usuario_id' => $idUser])
-                        -> all();
-        $response = [
-            'success' => true, 
-            'message' => 'Lista de ventas',
-            'sales' => $sales
-        ];
-        
         return $response;
     }
 
-    public function actionGetInfoLineChart(){
+    /* Retorna la lista de ventas del periodo */
+    public function actionGetSales($idPeriod, $idUser)
+    {
+
+        $period = Periodo::findOne($idPeriod);
+
+        $sales = Venta::find()
+            ->where(['fecha' >= $period->fecha_inicio, 'usuario_id' => $idUser])
+            ->all();
+        $response = [
+            'success' => true,
+            'message' => 'Lista de ventas',
+            'sales' => $sales
+        ];
+
+        return $response;
+    }
+
+    public function actionGetInfoLineChart()
+    {
         $params = Yii::$app->getRequest()->getBodyParams();
-        if($params['tipo'] === 'mes'){
+        $fechaFinWhole = $params['fechaFin'].' '.'23:59:00.000';
+        if ($params['tipo'] === 'mes') {
             $salesForDay = (new Query())
-            ->select(['DATE(DATE_TRUNC(\'month\', fecha)) AS mes', 'SUM(cantidad_total) AS total'])
-            ->from('venta')
-             ->where(['>=','fecha', $params['fechaInicio']])
-            ->AndWhere(['<=','fecha', $params['fechaFin']])
-            ->groupBy(['mes'])
+                ->select(['DATE(DATE_TRUNC(\'month\', fecha)) AS mes', 'SUM(cantidad_total) AS total'])
+                ->from('venta')
+                ->where(['between', 'fecha', $params['fechaInicio'], $fechaFinWhole])
+                ->groupBy(['mes'])
+                ->all();
+        } else {
+            $salesForDay = Venta::find()
+                ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total'])
+                ->where(['between', 'fecha', $params['fechaInicio'], $fechaFinWhole])
+                ->orderBy(['fecha' => SORT_ASC])
+                ->groupBy(['DATE(fecha)'])
+                ->asArray()
+                ->all();
+        }
+        if ($salesForDay) {
+            $response = [
+                'success' => true,
+                'message' => 'Lista de ventas por dia',
+                'salesForDay' => $salesForDay
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'No existen ventas aun',
+                'salesForDay' => $salesForDay
+            ];
+        }
+
+
+        return $response;
+    }
+
+    public function actionGetSalesByDay()
+    {
+        //fecha inicio/ fecha fin/ usuario
+        $params = Yii::$app->getRequest()->getBodyParams();
+        $fechaFinWhole = $params['fechaFin'].' '.'23:59:00.000';
+        if($params['usuarioId'] === 'todos'){
+            $salesForDay = Venta::find()
+            ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total', 'usuario.nombres'])
+            ->joinWith('usuario')
+            ->andWhere(['between', 'fecha',$params['fechaInicio'], $fechaFinWhole])
+            ->orderBy(['fecha' => SORT_ASC])
+            ->groupBy(['DATE(fecha)', 'usuario.nombres'])
+            ->asArray()
             ->all();
         }else{
             $salesForDay = Venta::find()
-            ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total'])
-            ->where(['>=','fecha', $params['fechaInicio']])
-            ->AndWhere(['<=','fecha', $params['fechaFin']])
+            ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total', 'usuario.nombres'])
+            ->joinWith('usuario')
+            ->Where(['usuario_id' => $params['usuarioId']])
+            ->andWhere(['between', 'fecha',$params['fechaInicio'], $fechaFinWhole])
             ->orderBy(['fecha' => SORT_ASC])
-            ->groupBy(['DATE(fecha)'])
+            ->groupBy(['DATE(fecha)', 'usuario.nombres'])
             ->asArray()
             ->all();
         }
-        if($salesForDay){
+        if ($salesForDay) {
             $response = [
                 'success' => true,
                 'message' => 'Lista de ventas por dia',
@@ -140,21 +187,11 @@ class VentaController extends \yii\web\Controller
         }else{
             $response = [
                 'success' => false,
-                'message' => 'No existen ventas aun',
+                'message' => 'No existen ventas aun!',
                 'salesForDay' => $salesForDay
             ];
         }
-        
-       
+
         return $response;
-    }
-
-    public function actionGetBestSellerProduct(){
-        $sales = Venta::find()
-                    ->select(['venta.fecha', 'detalle_venta.cantidad as cantidad'])
-                    ->join('LEFT JOIN', 'detalle_venta', 'detalle_venta.venta_id = venta.id')
-                    ->all();
-
-        return $sales;
     }
 }
