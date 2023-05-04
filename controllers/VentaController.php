@@ -7,6 +7,7 @@ use app\models\Venta;
 use app\models\Periodo;
 use Yii;
 use yii\db\Query;
+use yii\data\Pagination;
 
 class VentaController extends \yii\web\Controller
 {
@@ -118,7 +119,7 @@ class VentaController extends \yii\web\Controller
     public function actionGetInfoLineChart()
     {
         $params = Yii::$app->getRequest()->getBodyParams();
-        $fechaFinWhole = $params['fechaFin'].' '.'23:59:00.000';
+        $fechaFinWhole = $params['fechaFin'] . ' ' . '23:59:00.000';
         if ($params['tipo'] === 'mes') {
             $salesForDay = (new Query())
                 ->select(['DATE(DATE_TRUNC(\'month\', fecha)) AS mes', 'SUM(cantidad_total) AS total'])
@@ -153,45 +154,122 @@ class VentaController extends \yii\web\Controller
         return $response;
     }
 
-    public function actionGetSalesByDay()
+    public function actionGetSalesByDay($pageSize = 7)
     {
         //fecha inicio/ fecha fin/ usuario
         $params = Yii::$app->getRequest()->getBodyParams();
-        $fechaFinWhole = $params['fechaFin'].' '.'23:59:00.000';
-        if($params['usuarioId'] === 'todos'){
+
+        $fechaFinWhole = $params['fechaFin'] . ' ' . '23:59:00.000';
+        if ($params['usuarioId'] === 'todos') {
             $salesForDay = Venta::find()
-            ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total', 'usuario.nombres'])
-            ->joinWith('usuario')
-            ->andWhere(['between', 'fecha',$params['fechaInicio'], $fechaFinWhole])
-            ->orderBy(['fecha' => SORT_ASC])
-            ->groupBy(['DATE(fecha)', 'usuario.nombres'])
-            ->asArray()
-            ->all();
-        }else{
+                ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total', 'usuario.nombres'])
+                ->joinWith('usuario')
+                ->andWhere(['between', 'fecha', $params['fechaInicio'], $fechaFinWhole])
+                ->orderBy(['fecha' => SORT_ASC])
+                ->groupBy(['DATE(fecha)', 'usuario.nombres'])
+                ->asArray();
+        } else {
             $salesForDay = Venta::find()
-            ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total', 'usuario.nombres'])
-            ->joinWith('usuario')
-            ->Where(['usuario_id' => $params['usuarioId']])
-            ->andWhere(['between', 'fecha',$params['fechaInicio'], $fechaFinWhole])
-            ->orderBy(['fecha' => SORT_ASC])
-            ->groupBy(['DATE(fecha)', 'usuario.nombres'])
-            ->asArray()
-            ->all();
-        }
-        if ($salesForDay) {
-            $response = [
-                'success' => true,
-                'message' => 'Lista de ventas por dia',
-                'salesForDay' => $salesForDay
-            ];
-        }else{
-            $response = [
-                'success' => false,
-                'message' => 'No existen ventas aun!',
-                'salesForDay' => $salesForDay
-            ];
+                ->select(['DATE(fecha) AS fecha', 'SUM(cantidad_total) AS total', 'usuario.nombres'])
+                ->joinWith('usuario')
+                ->Where(['usuario_id' => $params['usuarioId']])
+                ->andWhere(['between', 'fecha', $params['fechaInicio'], $fechaFinWhole])
+                ->orderBy(['fecha' => SORT_ASC])
+                ->groupBy(['DATE(fecha)', 'usuario.nombres'])
+                ->asArray();
         }
 
+        $pagination = new Pagination([
+            'defaultPageSize' => $pageSize,
+            'totalCount' => $salesForDay->count()
+        ]);
+
+        $sales = $salesForDay
+            ->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+
+        if ($sales) {
+            $currentPage = $pagination->getPage() + 1;
+            $totalPages = $pagination->getPageCount();
+            $response = [
+                'success' => true,
+                'message' => 'lista de clientes',
+                'pageInfo' => [
+                    'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
+                    'previus' => $currentPage == 1 ? null : $currentPage - 1,
+                    'count' => count($sales),
+                    'page' => $currentPage,
+                    'start' => $pagination->getOffset(),
+                    'totalPages' => $totalPages,
+                ],
+                'sales' => $sales
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Lista de ventas por dia',
+                'sales' => []
+            ];
+        }
+        return $response;
+    }
+
+    /* Retorna la venta con su detalle de venta, segun un rango de fecha y usuario */
+    public function actionGetSaleDetail($pageSize = 7)
+    {
+        $params = Yii::$app->getRequest()->getBodyParams();
+        $fechaFinWhole = $params['fechaFin'] . ' 23:59:58.0000';
+
+        if ($params['usuarioId'] === 'todos') {
+            $query = Venta::find()
+                ->joinWith('usuario')
+                ->where(['between', 'fecha', $params['fechaInicio'], $fechaFinWhole])
+                ->orderBy(['id' => SORT_ASC])
+                ->asArray();
+        } else {
+            $query = Venta::find()
+                ->joinWith('usuario')
+                ->Where(['usuario_id' => $params['usuarioId']])
+                ->andWhere(['between', 'fecha', $params['fechaInicio'], $fechaFinWhole])
+                ->orderBy(['id' => SORT_ASC])
+                ->asArray();
+        }
+
+
+        $pagination = new Pagination([
+            'defaultPageSize' => $pageSize,
+            'totalCount' => $query->count()
+        ]);
+
+        $sales = $query
+            ->offset($pagination->offset)
+            ->limit($pagination->limit)
+            ->all();
+
+        if ($sales) {
+            $currentPage = $pagination->getPage() + 1;
+            $totalPages = $pagination->getPageCount();
+            $response = [
+                'success' => true,
+                'message' => 'lista de clientes',
+                'pageInfo' => [
+                    'next' => $currentPage == $totalPages ? null  : $currentPage + 1,
+                    'previus' => $currentPage == 1 ? null : $currentPage - 1,
+                    'count' => count($sales),
+                    'page' => $currentPage,
+                    'start' => $pagination->getOffset(),
+                    'totalPages' => $totalPages,
+                ],
+                'sales' => $sales
+            ];
+        } else {
+            $response = [
+                'success' => false,
+                'message' => 'Lista de ventas por dia',
+                'sales' => []
+            ];
+        }
         return $response;
     }
 }

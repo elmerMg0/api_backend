@@ -120,7 +120,7 @@ class PeriodoController extends \yii\web\Controller
                 //vetnas totales hasta el momento 
                 $totalSaleCash = Venta::find()
                     ->where(['>=', 'fecha', $period->fecha_inicio])
-                    ->andWhere([ 'usuario_id' => 1, 'tipo_pago' => 'efectivo'])
+                    ->andWhere([ 'usuario_id' => $user->id, 'tipo_pago' => 'efectivo'])
                     ->sum('cantidad_total');
 
                 $totalSaleCard = Venta::find()

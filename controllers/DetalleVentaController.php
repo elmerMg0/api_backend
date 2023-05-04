@@ -4,6 +4,8 @@ namespace app\controllers;
 
 use app\models\DetalleVenta;
 use Yii;
+use app\models\Venta;
+
 class DetalleVentaController extends \yii\web\Controller
 {
     public function behaviors()
@@ -66,6 +68,31 @@ class DetalleVentaController extends \yii\web\Controller
                 'list' => $detail
             ];
         }
+        return $response;
+    }
+
+    public function actionGetSaleDetail( $idSale ){
+        $saleInfo = Venta::find()
+                    ->select(['venta.*', 'usuario.username', 'cliente.nombre as cliente'])
+                    ->where(['venta.id' => $idSale])
+                    ->leftJoin('usuario', 'usuario.id = venta.usuario_id')
+                    ->leftJoin('cliente', 'cliente.id = venta.cliente_id')
+                    ->asArray()
+                    ->one();
+
+        $products = Venta::find($idSale)
+                    ->select(['producto.nombre','producto.precio_venta', 'detalle_venta.cantidad'])
+                    ->where(['venta.id' => $idSale])
+                    ->leftJoin('detalle_venta', 'detalle_venta.venta_id = venta.id')
+                    ->leftJoin('producto', 'detalle_venta.producto_id = producto.id')
+                    ->asArray()
+                    ->all();
+        $response = [
+            'success' => true, 
+            'message' => 'Detalle de venta',
+            'saleInfo' => $saleInfo,
+            'products' => $products
+        ];
         return $response;
     }
 
